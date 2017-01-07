@@ -79,6 +79,7 @@ namespace WindowsFormsApplication1
                     //button1_Click(sender, e); - Ne kényszeritsük a felhasználót
                     label2.Text = "A hely érvénytelen";
                     button11.Enabled = false;
+                    button12.Enabled = false; //v1.2
                     return; //v1.1
                 }
                 //Minden fontosabb ellenőrzés megtörtént, mehet a betöltés - Ha van \-jel a végén
@@ -93,12 +94,14 @@ namespace WindowsFormsApplication1
 
                     file.Close();
                     button11.Enabled = true;
+                    button12.Enabled = true; //v1.2
                     LoadRecs(); //A textBox1.Text-ben el van tárolva a hely, nem szükséges átadni
                 }
                 else //Ha nem találja az aom.exe-t, de nem helyileg fut
                 {
                     label2.Text = "A játék inditója nem található.";
                     button11.Enabled = false;
+                    button12.Enabled = false; //v1.2
                 }
             }
             else if (File.Exists("aom.exe"))
@@ -106,12 +109,14 @@ namespace WindowsFormsApplication1
                 label2.Text = "Betöltés...";
                 //Nem tárolja el a path.txt-ben a Helyi futás szöveget
                 button11.Enabled = true;
+                button12.Enabled = true; //v1.2
                 LoadRecs(); //A textBox1.Text-ben el van tárolva a hely, nem szükséges átadni
             }
             else
             {
                 label2.Text = "A folytatáshoz írj \\-jelet az útvonal végére"; //v1.1
                 button11.Enabled = false;
+                button12.Enabled = false; //v1.2
             }
 /*            else if (textBox1.Text != "Helyi futás")
             {
@@ -346,6 +351,51 @@ namespace WindowsFormsApplication1
                 LoadRecs(); //De... Inkább előtte :D -- Aha, csak a num-ot vissza kell állitani - Vagy itt, vagy a LoadRecs-ben
             }
             
+        }
+
+        private void button12_Click(object sender, EventArgs e)
+        { //v1.2 - 2014.04.21.
+            if (num == 0)
+                return;
+            for (int i = 1; i < 10; i++)
+                if (File.Exists(path + "savegame\\Recorded Game " + i + ".rec"))
+                    if (!File.Exists(path + "savegame\\" + DateTime.Today.ToString() + " " + i + ".rec"))
+                        File.Move(path + "savegame\\Recorded Game " + i + ".rec", path + "savegame\\" + DateTime.Today.ToString("yyyy.MM.dd.") + " - " + i + ".rec");
+                    else
+                    {
+                        int x = 2;
+                        while (File.Exists(path + "savegame\\" + DateTime.Today.ToString() + " " + i + " (" + x + ").rec"))
+                            x++;
+                        File.Move(path + "savegame\\Recorded Game " + i + ".rec", path + "savegame\\" + DateTime.Today.ToString("yyyy.MM.dd.") + " - " + i + " (" + x + ").rec");
+                    }
+            label3.Visible = false;
+            textBox2.Visible = false;
+            button2.Visible = false;
+            label4.Visible = false;
+            textBox3.Visible = false;
+            button3.Visible = false;
+            label5.Visible = false;
+            textBox4.Visible = false;
+            button4.Visible = false;
+            label6.Visible = false;
+            textBox5.Visible = false;
+            button5.Visible = false;
+            label7.Visible = false;
+            textBox6.Visible = false;
+            button6.Visible = false;
+            label8.Visible = false;
+            textBox7.Visible = false;
+            button7.Visible = false;
+            label9.Visible = false;
+            textBox8.Visible = false;
+            button8.Visible = false;
+            label10.Visible = false;
+            textBox9.Visible = false;
+            button9.Visible = false;
+            label11.Visible = false;
+            textBox10.Visible = false;
+            button10.Visible = false;
+            LoadRecs();
         }
     }
 }
