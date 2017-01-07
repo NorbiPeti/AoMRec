@@ -32,6 +32,10 @@ namespace WindowsFormsApplication1
                 file.Close();
                 textBox1.Text=path;
             }
+            this.Text = this.Text + " " + Application.ProductVersion; //v1.1
+            textBox1.Text = textBox1.Text; //Meghivja a változáskor végbemenő utasitásokat, és igy nem is kell a paraméterekkel bajlódni - v1.1
+            //De, mégis egyszerűbb
+            textBox1_TextChanged(null, null);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -48,13 +52,17 @@ namespace WindowsFormsApplication1
                     openFileDialog1.InitialDirectory = openFileDialog1.InitialDirectory.Substring(0, index); // or index + 1 to keep slash
             }
             openFileDialog1.ShowDialog();
-            textBox1.Text = openFileDialog1.FileName;
+//            MessageBox.Show(openFileDialog1.FileName);
+//            if (openFileDialog1.FileName == "aom.exe")
+            if (openFileDialog1.FileName.Contains("\\")) //v1.1
+                textBox1.Text = openFileDialog1.FileName;
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
 //            MessageBox.Show("A szöveg megváltozott. Azért nézem meg, mert én is állitom a szöveget."); - Pipa
             //Megpróbálja betölteni a felvételeket - Csak előbb leellenőrzi, hogy az aom.exe létezik-e, mert ha beirta a helyet, akkor nem biztos
+//            MessageBox.Show(textBox1.Text); //Valamiért a helyi futásnál lesz \-jel a végén, vagy mi - Megoldottam, vagy megoldódott magától, nem tudom, csak azt, hogy besokaltam, és amúgy is debug-olni akartam, ezért bemásoltam az aom.exe-t a programhoz, és... És jó...
             int index=textBox1.Text.LastIndexOf(".");
             if (index > 0) //Az aom.exe van beállitva
             {
@@ -63,23 +71,63 @@ namespace WindowsFormsApplication1
             }
             //Ha az utolsó karakter \-jel, ellenőrizze le a mappa létezését
 //            MessageBox.Show(textBox1.TextLength+"");
+//            MessageBox.Show(textBox1.Text.Substring(textBox1.TextLength - 1, 1));
             if (textBox1.Text.Substring(textBox1.TextLength - 1, 1) == "\\")
             {
                 if (!Directory.Exists(textBox1.Text))
                 {
                     //button1_Click(sender, e); - Ne kényszeritsük a felhasználót
                     label2.Text = "A hely érvénytelen";
+                    button11.Enabled = false;
+                    return; //v1.1
                 }
                 //Minden fontosabb ellenőrzés megtörtént, mehet a betöltés - Ha van \-jel a végén
                 //Természetesen most jöttem rá, hogy a legegyszerűbb, ha az EXE-t berakom a játék mappájába... Egyébként...
                 label2.Text = "Betöltés...";
-                // Write the string to a file.
-                System.IO.StreamWriter file = new System.IO.StreamWriter("path.txt");
-                file.WriteLine(textBox1.Text); //http://msdn.microsoft.com/en-us/library/aa287548(v=vs.71).aspx
+//                MessageBox.Show(File.Exists("aom.exe") + "\n" + File.Exists(textBox1.Text)); - A textBox1.Text-hez elfelejtettem az aom.exe-t...
+                if (File.Exists(textBox1.Text + "aom.exe")) //v1.1
+                {
+                    // Write the string to a file.
+                    System.IO.StreamWriter file = new System.IO.StreamWriter("path.txt");
+                    file.WriteLine(textBox1.Text); //http://msdn.microsoft.com/en-us/library/aa287548(v=vs.71).aspx
 
-                file.Close();
+                    file.Close();
+                    button11.Enabled = true;
+                    LoadRecs(); //A textBox1.Text-ben el van tárolva a hely, nem szükséges átadni
+                }
+                else //Ha nem találja az aom.exe-t, de nem helyileg fut
+                {
+                    label2.Text = "A játék inditója nem található.";
+                    button11.Enabled = false;
+                }
+            }
+            else if (File.Exists("aom.exe"))
+            {
+                label2.Text = "Betöltés...";
+                //Nem tárolja el a path.txt-ben a Helyi futás szöveget
+                button11.Enabled = true;
                 LoadRecs(); //A textBox1.Text-ben el van tárolva a hely, nem szükséges átadni
             }
+            else
+            {
+                label2.Text = "A folytatáshoz írj \\-jelet az útvonal végére"; //v1.1
+                button11.Enabled = false;
+            }
+/*            else if (textBox1.Text != "Helyi futás")
+            {
+                label2.Text = "A folytatáshoz írj \\-jelet az útvonal végére"; //v1.1
+                button11.Enabled = false;
+            }
+            else //v1.1 - Ha nincs \-jel a végén, megnézi, helyileg fut-e
+            {
+                if (File.Exists("aom.exe")) //Ugyanaz, mintha a textBox1 szövegét nézné - AMIT MÁR MEGTETT FELJEBB (csak nem vált be - lol)
+                {
+                    label2.Text = "Betöltés...";
+                    //Nem tárolja el a path.txt-ben a Helyi futás szöveget
+                    button11.Enabled = true;
+                    LoadRecs(); //A textBox1.Text-ben el van tárolva a hely, nem szükséges átadni
+                }
+            }*/
         }
         string path;
         int num = 0;
@@ -103,7 +151,7 @@ namespace WindowsFormsApplication1
                 label2.Text = "Nem található felvétel.";
             else //Található felvétel - Láthatóvá tesz megfelelő számú mezőt
             {
-                label2.Text = num + " felvétel található. A nem mentett felvételek törlésre kerülnek!";
+                label2.Text = num + " felvétel található. A nem mentett felvételek törlésre kerülnek a gombra kattintva. Akkor is, ha nem ismerte fel a program.";
                 if (num >= 1)
                 { //label[num+2], textBox[num+1], button[num+1]
                     label3.Visible = true;
@@ -167,6 +215,9 @@ namespace WindowsFormsApplication1
             label3.Visible = false;
             textBox2.Visible = false;
             button2.Visible = false;
+            num--; //v1.1
+            if (num == 0)
+                label2.Text = "Összes felvétel mentve. Az újratöltéshez katt a lenti gombra.";
         }
         private void button3_Click(object sender, EventArgs e)
         {
@@ -174,6 +225,9 @@ namespace WindowsFormsApplication1
             label4.Visible = false;
             textBox3.Visible = false;
             button3.Visible = false;
+            num--; //v1.1
+            if (num == 0)
+                label2.Text = "Összes felvétel mentve. Az újratöltéshez katt a lenti gombra.";
         }
         private void button4_Click(object sender, EventArgs e)
         {
@@ -181,6 +235,9 @@ namespace WindowsFormsApplication1
             label5.Visible = false;
             textBox4.Visible = false;
             button4.Visible = false;
+            num--; //v1.1
+            if (num == 0)
+                label2.Text = "Összes felvétel mentve. Az újratöltéshez katt a lenti gombra.";
         }
         private void button5_Click(object sender, EventArgs e)
         {
@@ -188,6 +245,9 @@ namespace WindowsFormsApplication1
             label6.Visible = false;
             textBox5.Visible = false;
             button5.Visible = false;
+            num--; //v1.1
+            if (num == 0)
+                label2.Text = "Összes felvétel mentve. Az újratöltéshez katt a lenti gombra.";
         }
         private void button6_Click(object sender, EventArgs e)
         {
@@ -195,6 +255,9 @@ namespace WindowsFormsApplication1
             label7.Visible = false;
             textBox6.Visible = false;
             button6.Visible = false;
+            num--; //v1.1
+            if (num == 0)
+                label2.Text = "Összes felvétel mentve. Az újratöltéshez katt a lenti gombra.";
         }
         private void button7_Click(object sender, EventArgs e)
         {
@@ -202,6 +265,9 @@ namespace WindowsFormsApplication1
             label8.Visible = false;
             textBox7.Visible = false;
             button7.Visible = false;
+            num--; //v1.1
+            if (num == 0)
+                label2.Text = "Összes felvétel mentve. Az újratöltéshez katt a lenti gombra.";
         }
         private void button8_Click(object sender, EventArgs e)
         {
@@ -209,6 +275,9 @@ namespace WindowsFormsApplication1
             label9.Visible = false;
             textBox8.Visible = false;
             button8.Visible = false;
+            num--; //v1.1
+            if (num == 0)
+                label2.Text = "Összes felvétel mentve. Az újratöltéshez katt a lenti gombra.";
         }
         private void button9_Click(object sender, EventArgs e)
         {
@@ -216,6 +285,9 @@ namespace WindowsFormsApplication1
             label10.Visible = false;
             textBox9.Visible = false;
             button9.Visible = false;
+            num--; //v1.1
+            if (num == 0)
+                label2.Text = "Összes felvétel mentve. Az újratöltéshez katt a lenti gombra.";
         }
         private void button10_Click(object sender, EventArgs e)
         {
@@ -224,6 +296,9 @@ namespace WindowsFormsApplication1
             label11.Visible = false;
             textBox10.Visible = false;
             button10.Visible = false; //Bemásolgattam az összes ilyen hármast és átirtam a true-t false-ra (csere)
+            num--; //v1.1
+            if (num == 0)
+                label2.Text = "Összes felvétel mentve. Az újratöltéshez katt a lenti gombra.";
         }
 
         private void button11_Click(object sender, EventArgs e)
